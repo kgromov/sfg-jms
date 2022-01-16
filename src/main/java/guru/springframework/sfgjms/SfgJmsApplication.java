@@ -15,7 +15,8 @@ public class SfgJmsApplication {
 			.setPersistenceEnabled(false)
 			.setJournalDirectory("target/data/journal")
 			.setSecurityEnabled(false)
-			.addAcceptorConfiguration("invm", "vm://0"));
+			.addAcceptorConfiguration("invm", "vm://0")
+		);
 
 		server.start();
 

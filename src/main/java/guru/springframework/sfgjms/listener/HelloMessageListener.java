@@ -3,6 +3,7 @@ package guru.springframework.sfgjms.listener;
 import guru.springframework.sfgjms.config.JmsConfig;
 import guru.springframework.sfgjms.model.HelloWorldMessage;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.messaging.MessageHeaders;
@@ -17,29 +18,29 @@ import java.util.UUID;
 /**
  * Created by jt on 2019-07-17.
  */
-@RequiredArgsConstructor
 @Component
+@RequiredArgsConstructor
+@Slf4j
 public class HelloMessageListener {
 
     private final JmsTemplate jmsTemplate;
 
     @JmsListener(destination = JmsConfig.MY_QUEUE)
     public void listen(@Payload HelloWorldMessage helloWorldMessage,
-                       @Headers MessageHeaders headers, Message message){
+                       @Headers MessageHeaders headers,
+                       Message message){
 
-        //System.out.println("I Got a Message!!!!!");
-
-       // System.out.println(helloWorldMessage);
-
+        log.info("I Got a Message {}", helloWorldMessage);
 
         // uncomment and view to see retry count in debugger
        // throw new RuntimeException("foo");
 
     }
 
-    @JmsListener(destination = JmsConfig.MY_SEND_RCV_QUEUE)
+//    @JmsListener(destination = JmsConfig.MY_SEND_RCV_QUEUE)
     public void listenForHello(@Payload HelloWorldMessage helloWorldMessage,
-                       @Headers MessageHeaders headers, Message message) throws JMSException {
+                               @Headers MessageHeaders headers,
+                               Message message) throws JMSException {
 
         HelloWorldMessage payloadMsg = HelloWorldMessage
                 .builder()
@@ -48,7 +49,6 @@ public class HelloMessageListener {
                 .build();
 
         jmsTemplate.convertAndSend(message.getJMSReplyTo(), payloadMsg);
-
     }
 
 }

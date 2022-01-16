@@ -5,8 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import guru.springframework.sfgjms.config.JmsConfig;
 import guru.springframework.sfgjms.model.HelloWorldMessage;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.jms.core.MessageCreator;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -18,15 +20,17 @@ import java.util.UUID;
 /**
  * Created by jt on 2019-07-17.
  */
-@RequiredArgsConstructor
 @Component
+@RequiredArgsConstructor
+@Slf4j
 public class HelloSender {
 
     private final JmsTemplate jmsTemplate;
     private final ObjectMapper objectMapper;
 
+//    @Async("taskExecutor")
     @Scheduled(fixedRate = 2000)
-    public void sendMessage(){
+    public void sendMessage() {
 
         HelloWorldMessage message = HelloWorldMessage
                 .builder()
@@ -35,11 +39,11 @@ public class HelloSender {
                 .build();
 
         jmsTemplate.convertAndSend(JmsConfig.MY_QUEUE, message);
-
+        log.info("Send message: {}", message);
     }
 
-    @Scheduled(fixedRate = 2000)
-    public void sendandReceiveMessage() throws JMSException {
+//    @Scheduled(fixedRate = 2000)
+    public void sendAndReceiveMessage() throws JMSException {
 
         HelloWorldMessage message = HelloWorldMessage
                 .builder()
@@ -47,26 +51,22 @@ public class HelloSender {
                 .message("Hello")
                 .build();
 
-        Message receviedMsg = jmsTemplate.sendAndReceive(JmsConfig.MY_SEND_RCV_QUEUE, new MessageCreator() {
+        Message receivedMsg = jmsTemplate.sendAndReceive(JmsConfig.MY_SEND_RCV_QUEUE, new MessageCreator() {
             @Override
             public Message createMessage(Session session) throws JMSException {
-                Message helloMessage = null;
-
                 try {
-                    helloMessage = session.createTextMessage(objectMapper.writeValueAsString(message));
+                    Message helloMessage = session.createTextMessage(objectMapper.writeValueAsString(message));
                     helloMessage.setStringProperty("_type", "guru.springframework.sfgjms.model.HelloWorldMessage");
-
-                    System.out.println("Sending Hello");
-
+                    log.info("Sending Hello");
                     return helloMessage;
-
                 } catch (JsonProcessingException e) {
-                   throw new JMSException("boom");
+                    throw new JMSException("boom");
                 }
             }
         });
 
-        System.out.println(receviedMsg.getBody(String.class));
+        String body = receivedMsg.getBody(String.class);
+        log.info(body);
 
     }
 
