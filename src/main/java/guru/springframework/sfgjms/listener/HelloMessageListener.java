@@ -25,7 +25,7 @@ public class HelloMessageListener {
 
     private final JmsTemplate jmsTemplate;
 
-    @JmsListener(destination = JmsConfig.MY_QUEUE)
+//    @JmsListener(destination = JmsConfig.MY_QUEUE)
     public void listen(@Payload HelloWorldMessage helloWorldMessage,
                        @Headers MessageHeaders headers,
                        Message message){

@@ -10,7 +10,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class SfgJmsApplication {
 
 	public static void main(String[] args) throws Exception {
-
 		ActiveMQServer server = ActiveMQServers.newActiveMQServer(new ConfigurationImpl()
 			.setPersistenceEnabled(false)
 			.setJournalDirectory("target/data/journal")
