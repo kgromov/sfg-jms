@@ -1,16 +1,20 @@
 package guru.springframework.sfgjms.sender;
 
+import guru.springframework.sfgjms.config.JmsProperties;
 import guru.springframework.sfgjms.model.HelloWorldMessage;
 import lombok.RequiredArgsConstructor;
-import org.springframework.jms.core.JmsTemplate;
+import org.springframework.jms.core.JmsClient;
 import org.springframework.stereotype.Service;
+
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class SyncReceiver {
-    private final JmsTemplate jmsTemplate;
+    private final JmsClient jmsClient;
+    private final JmsProperties jmsProperties;
 
-    public HelloWorldMessage pullMessage() {
-        return (HelloWorldMessage) jmsTemplate.receiveAndConvert();
+    public Optional<HelloWorldMessage> pullMessage() {
+        return jmsClient.destination(jmsProperties.sendTo()).receive(HelloWorldMessage.class);
     }
 }

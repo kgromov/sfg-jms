@@ -13,6 +13,6 @@ public class PullMessageController {
 
     @GetMapping("pull")
     public HelloWorldMessage getMessage() {
-        return syncReceiver.pullMessage();
+        return syncReceiver.pullMessage().orElseThrow(() -> new RuntimeException("No message"));
     }
 }

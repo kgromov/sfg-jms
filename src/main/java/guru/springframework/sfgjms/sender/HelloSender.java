@@ -1,32 +1,25 @@
 package guru.springframework.sfgjms.sender;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import guru.springframework.sfgjms.config.JmsConfig;
 import guru.springframework.sfgjms.config.JmsProperties;
 import guru.springframework.sfgjms.model.HelloWorldMessage;
 import jakarta.jms.JMSException;
-import jakarta.jms.Message;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.activemq.artemis.utils.RandomUtil;
-import org.springframework.jms.core.JmsTemplate;
+import org.springframework.jms.core.JmsClient;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.util.Objects;
 import java.util.UUID;
 
-/**
- * Created by jt on 2019-07-17.
- */
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class HelloSender {
 
-    private final JmsTemplate jmsTemplate;
+    private final JmsClient jmsClient;
     private final JmsProperties jmsProperties;
 
 //    @Async("taskExecutor")
@@ -39,7 +32,7 @@ public class HelloSender {
                 .message("Hello World "+ RandomUtil.randomInterval(0, 100) + "!")
                 .build();
 
-        jmsTemplate.convertAndSend(message);
+        jmsClient.destination(jmsProperties.sendTo()).send(message);
         log.info("Send message: {}", message);
     }
 
@@ -53,17 +46,12 @@ public class HelloSender {
                 .message("Hello")
                 .build();
 
-        Message receivedMsg = jmsTemplate.sendAndReceive(jmsProperties.replyTo(), session -> {
-            try {
-                Message helloMessage = session.createObjectMessage(message);
-                log.info("Sending Hello");
-                return helloMessage;
-            } catch (JMSException e) {
-                throw new JMSException(e.getMessage());
-            }
-        });
+        log.info("Sending Hello");
+//        var receivedMsg = jmsClient.destination(jmsProperties.replyTo()).sendAndReceive(MessageBuilder.withPayload(message).build());
+        var receivedMsg = jmsClient.destination(jmsProperties.replyTo())
+                .sendAndReceive(message, HelloWorldMessage.class);
 
-        HelloWorldMessage receivedMessage = receivedMsg.getBody(HelloWorldMessage.class);
+        HelloWorldMessage receivedMessage = receivedMsg.orElseThrow(() -> new JMSException("No message received"));
         log.info("Received message: {}", receivedMessage);
         log.info("send.id == received.id {}", Objects.equals(receivedMessage.getId(), message.getId()));
         log.info("send.body == received.body {}", Objects.equals(receivedMessage.getMessage(), message.getMessage()));
