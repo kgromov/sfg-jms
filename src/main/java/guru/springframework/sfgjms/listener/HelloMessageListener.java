@@ -7,24 +7,20 @@ import jakarta.jms.Message;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jms.annotation.JmsListener;
-import org.springframework.jms.core.JmsTemplate;
+import org.springframework.jms.core.JmsClient;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.handler.annotation.Headers;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Component;
 
-
 import java.util.UUID;
 
-/**
- * Created by jt on 2019-07-17.
- */
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class HelloMessageListener {
 
-    private final JmsTemplate jmsTemplate;
+    private final JmsClient jmsClient;
 
     @JmsListener(destination = JmsConfig.MY_QUEUE)
     public void listen(@Payload HelloWorldMessage helloWorldMessage,
@@ -49,7 +45,6 @@ public class HelloMessageListener {
                 .message("World!!")
                 .build();
 
-        jmsTemplate.convertAndSend(message.getJMSReplyTo(), payloadMsg);
+        jmsClient.destination(message.getJMSReplyTo()).send(payloadMsg);
     }
-
 }
