@@ -3,6 +3,7 @@ package guru.springframework.sfgjms.sender;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import guru.springframework.sfgjms.config.JmsConfig;
+import guru.springframework.sfgjms.config.JmsProperties;
 import guru.springframework.sfgjms.model.HelloWorldMessage;
 import jakarta.jms.JMSException;
 import jakarta.jms.Message;
@@ -11,11 +12,10 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.activemq.artemis.utils.RandomUtil;
 import org.springframework.jms.core.JmsTemplate;
-import org.springframework.jms.core.MessageCreator;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -27,10 +27,10 @@ import java.util.UUID;
 public class HelloSender {
 
     private final JmsTemplate jmsTemplate;
-    private final ObjectMapper objectMapper;
+    private final JmsProperties jmsProperties;
 
 //    @Async("taskExecutor")
-    @Scheduled(fixedRate = 2000)
+//    @Scheduled(fixedRate = 2000)
     public void sendMessage() {
 
         HelloWorldMessage message = HelloWorldMessage
@@ -43,7 +43,7 @@ public class HelloSender {
         log.info("Send message: {}", message);
     }
 
-//    @Scheduled(fixedRate = 2000)
+    @Scheduled(fixedRate = 2000)
     @SneakyThrows
     public void sendAndReceiveMessage() {
 
@@ -53,22 +53,19 @@ public class HelloSender {
                 .message("Hello")
                 .build();
 
-        Message receivedMsg = jmsTemplate.sendAndReceive(JmsConfig.MY_SEND_RCV_QUEUE, session -> {
+        Message receivedMsg = jmsTemplate.sendAndReceive(jmsProperties.replyTo(), session -> {
             try {
-                Message helloMessage = session.createTextMessage(objectMapper.writeValueAsString(message));
-                helloMessage.setStringProperty("_type", "guru.springframework.sfgjms.model.HelloWorldMessage");
+                Message helloMessage = session.createObjectMessage(message);
                 log.info("Sending Hello");
                 return helloMessage;
-            } catch (JsonProcessingException e) {
+            } catch (JMSException e) {
                 throw new JMSException(e.getMessage());
             }
         });
 
-        String body = receivedMsg.getBody(String.class);
-        HelloWorldMessage receivedMessage = objectMapper.readerFor(HelloWorldMessage.class).readValue(body);
-        log.info("send == received? {}", message.equals(receivedMessage));
-        log.info(body);
-
+        HelloWorldMessage receivedMessage = receivedMsg.getBody(HelloWorldMessage.class);
+        log.info("Received message: {}", receivedMessage);
+        log.info("send.id == received.id {}", Objects.equals(receivedMessage.getId(), message.getId()));
+        log.info("send.body == received.body {}", Objects.equals(receivedMessage.getMessage(), message.getMessage()));
     }
-
 }
